@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+
+# Impeccable (local design tooling, not part of StepCast)
+.impeccable/
+.claude/skills/impeccable/
+.claude/agents/impeccable-*
+.claude/settings.local.json

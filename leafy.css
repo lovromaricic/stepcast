@@ -1,0 +1,405 @@
+/* Leafy: a tiny, friendly plant care app used to demo StepCast. Shared by index.html and player-demo.html. */
+
+:root {
+  /* Light theme. Every color is a variable so a dark theme can be added later by overriding these. */
+  --bg: #fbf7ef;            /* cream page */
+  --surface: #ffffff;
+  --surface-sunk: #f4efe3;
+  --ink: #273127;
+  --ink-soft: #5c6656;      /* 6.0:1 on white, 5.6:1 on cream */
+  --line: #e6dfcf;
+  --sage: #4f7d5c;          /* main color; white text on it is 4.75:1 */
+  --sage-strong: #406a4c;
+  --sage-soft: #e4eddd;
+  --sage-ink: #2f5a3c;
+  --water-soft: #e3eef8;
+  --water-ink: #1d5689;
+  --thirsty-ink: #9a4a2a;
+  --danger-ink: #a33d28;
+  --toast-bg: #273127;
+  --toast-ink: #fbf7ef;
+  --backdrop: rgba(39, 49, 39, 0.35);
+  --code-bg: rgba(255, 255, 255, 0.7);   /* code on the sage intro card */
+  --sage-line: rgba(47, 90, 60, 0.18);   /* dividers on the sage intro card */
+
+  --radius-sm: 12px;
+  --radius: 14px;
+  --radius-lg: 16px;
+  --shadow: 0 1px 2px rgba(39, 49, 39, 0.06), 0 8px 24px rgba(39, 49, 39, 0.07);
+  --shadow-pop: 0 12px 40px rgba(39, 49, 39, 0.18);
+  --focus: 0 0 0 3px var(--surface), 0 0 0 5px var(--sage);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+h1, h2, h3, p, ol, ul { margin: 0; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: none; box-shadow: var(--focus); }
+[hidden] { display: none !important; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--line); }
+
+.btn-primary { background: var(--sage); color: #fff; }
+.btn-primary:hover { background: var(--sage-strong); }
+
+.btn-big { min-height: 52px; padding: 0 var(--space-6); font-size: 17px; border-radius: var(--radius); }
+
+.btn-water { flex: 1; background: var(--water-soft); color: var(--water-ink); }
+.btn-water:hover { background: #d3e4f3; }
+
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+.btn-icon:hover, .btn-icon[aria-expanded="true"] { background: var(--surface-sunk); color: var(--ink); }
+
+/* ---------------------------------------------------------------- top bar */
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.logo { display: flex; align-items: center; gap: var(--space-2); font-size: 20px; font-weight: 800; color: var(--sage-ink); }
+.logo-mark { font-size: 26px; }
+
+.tabs { display: flex; gap: var(--space-1); flex: 1; }
+.tab {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.tab:hover { background: var(--surface-sunk); color: var(--ink); }
+.tab[aria-selected="true"] { background: var(--sage-soft); color: var(--sage-ink); }
+
+.profile {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sage-soft);
+  font-size: 22px;
+}
+.profile:hover { background: #d6e3cc; }
+
+/* ------------------------------------------------------------------- page */
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.intro {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--sage-soft);
+  color: var(--sage-ink);
+}
+.intro-title { font-weight: 700; font-size: 17px; margin-bottom: var(--space-2); }
+.intro ol { padding-left: 1.4em; display: grid; gap: var(--space-1); }
+.intro code { font-size: 14px; background: var(--code-bg); padding: 1px 6px; border-radius: 6px; }
+.intro-note { margin-top: var(--space-3); font-size: 14px; }
+.intro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin-top: var(--space-4); }
+.intro-link { color: var(--sage-ink); font-weight: 600; text-underline-offset: 3px; }
+
+/* "How to add StepCast": a native <details>, closed by default, no JavaScript. */
+.install { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--sage-line); }
+.install-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  list-style: none; /* hide the default triangle (Firefox) */
+}
+.install-summary::-webkit-details-marker { display: none; } /* and in Safari/Chrome */
+.install-summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-top: -2px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg); /* pointing right while closed */
+  transition: transform 0.15s ease;
+}
+.install[open] > .install-summary::after { transform: rotate(45deg); margin-top: -4px; } /* pointing down */
+.install ol.install-steps { margin-top: var(--space-3); gap: var(--space-3); }
+.install-steps > li { min-width: 0; } /* lets code blocks scroll instead of widening the card */
+.code-block {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--code-bg);
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre;
+}
+.intro .code-block code { padding: 0; background: none; font: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  .install-summary::after { transition: none; }
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.greeting { font-size: clamp(22px, 3.2vw, 28px); line-height: 1.25; font-weight: 750; letter-spacing: -0.01em; }
+
+/* ------------------------------------------------------------ plant cards */
+
+.garden {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.plant-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.plant-card.is-new { animation: plant-in 0.4s ease-out; }
+
+.plant-emoji {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--sage-soft);
+  font-size: 40px;
+  line-height: 1;
+}
+
+.plant-info { display: grid; gap: 2px; }
+.plant-name { font-size: 19px; line-height: 1.3; }
+.plant-room, .plant-watered { color: var(--ink-soft); font-size: 15px; }
+.plant-status { margin-top: var(--space-1); font-size: 15px; font-weight: 600; color: var(--sage-ink); }
+.plant-card.is-thirsty .plant-status { color: var(--thirsty-ink); }
+
+.plant-actions { display: flex; align-items: center; gap: var(--space-2); margin-top: auto; }
+.plant-menu { position: relative; }
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: 20;
+  display: grid;
+  min-width: 190px;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+}
+.menu-item:hover { background: var(--surface-sunk); }
+.menu-item-danger { color: var(--danger-ink); }
+
+.empty {
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 17px;
+}
+.empty strong { display: block; margin-bottom: var(--space-2); color: var(--ink); font-size: 20px; }
+.empty .btn { margin-top: var(--space-4); }
+
+/* -------------------------------------------------------------- reminders */
+
+.reminders-title { font-size: 20px; margin-bottom: var(--space-3); }
+.reminders { list-style: none; padding: 0; display: grid; gap: var(--space-2); }
+.reminder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.reminder-emoji { font-size: 28px; }
+.reminder-text { flex: 1; }
+.reminder-room { color: var(--ink-soft); font-size: 15px; }
+.reminder-when { font-weight: 600; color: var(--sage-ink); }
+.reminder-when.is-today { color: var(--thirsty-ink); }
+
+/* ------------------------------------------------------------------ popup */
+
+.popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--backdrop);
+}
+
+.popup {
+  width: min(480px, 100%);
+  max-height: calc(100vh - 2 * var(--space-4));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+.popup-title { font-size: 22px; }
+
+.field { display: grid; gap: var(--space-2); margin: 0; padding: 0; border: 0; min-width: 0; }
+.field-label { padding: 0; font-weight: 600; font-size: 15px; }
+.field input {
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.field input:focus-visible { border-color: var(--sage); }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chip {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-weight: 500;
+}
+.chip:hover { border-color: var(--sage); }
+.chip[aria-pressed="true"] { background: var(--sage); border-color: var(--sage); color: #fff; font-weight: 600; }
+.chip-emoji { width: 52px; height: 52px; padding: 0; font-size: 26px; }
+
+.popup-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
+
+/* ------------------------------------------------------------------ toast */
+
+/* Bottom-left, so it never hides behind StepCast's tutorial box, which centers itself at the bottom. */
+.toast {
+  position: fixed;
+  left: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 200;
+  max-width: calc(100vw - 2 * var(--space-5));
+  padding: var(--space-3) var(--space-5);
+  border-radius: 999px;
+  background: var(--toast-bg);
+  color: var(--toast-ink);
+  font-weight: 500;
+  transform: translateY(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast.is-visible { opacity: 1; transform: none; }
+
+@keyframes plant-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: opacity 0.2s ease; transform: none; }
+  .plant-card.is-new { animation: none; }
+}
+
+/* -------------------------------------------------------------- narrow */
+
+@media (max-width: 640px) {
+  .topbar { padding: var(--space-3) var(--space-4); }
+  .tabs { order: 3; flex-basis: 100%; }
+  .tab { flex: 1; padding: 0 var(--space-2); }
+  .logo { flex: 1; }
+  .page { padding: var(--space-5) var(--space-4) var(--space-7); }
+  .hero .btn-big { width: 100%; }
+  .garden { grid-template-columns: 1fr; }
+  .popup { padding: var(--space-5); }
+}

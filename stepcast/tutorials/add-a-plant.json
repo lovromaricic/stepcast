@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "id": "add-a-plant",
+  "title": "Add a plant",
+  "startUrl": "/",
+  "createdAt": "2026-09-29T19:00:00.000Z",
+  "steps": [
+    {
+      "selector": "[data-action=\"add-plant\"]",
+      "subtitle": "Let's give a new plant a home! Tap “+ Add a plant” to get started 🌱",
+      "url": "/",
+      "hint": { "tag": "button", "text": "+ Add a plant" }
+    },
+    {
+      "selector": "[data-action=\"chip-emoji-sunflower\"]",
+      "subtitle": "Pick an emoji for your plant. Let's go with a sunny sunflower 🌻",
+      "url": "/",
+      "hint": { "tag": "button", "text": "Sunflower" }
+    },
+    {
+      "action": "type",
+      "value": "Sunny",
+      "selector": "[data-action=\"new-plant-name\"]",
+      "subtitle": "Every plant deserves a name! Type “Sunny”, or pick your own ✏️",
+      "url": "/",
+      "hint": { "tag": "input", "text": "Name", "label": "Name" }
+    },
+    {
+      "selector": "[data-action=\"chip-room-balcony\"]",
+      "subtitle": "Sunflowers love the sun, so let's put it on the balcony ☀️",
+      "url": "/",
+      "hint": { "tag": "button", "text": "Balcony" }
+    },
+    {
+      "selector": "[data-action=\"chip-water-every-3-days\"]",
+      "subtitle": "How thirsty is it? Every 3 days is just right 💧",
+      "url": "/",
+      "hint": { "tag": "button", "text": "Every 3 days" }
+    },
+    {
+      "selector": "[data-action=\"save-plant\"]",
+      "subtitle": "All set! Save your plant and it joins the family 🎉",
+      "url": "/",
+      "hint": { "tag": "button", "text": "Save plant" }
+    }
+  ]
+}

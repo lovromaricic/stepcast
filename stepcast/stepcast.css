@@ -1,0 +1,561 @@
+/* StepCast v1 — everything is scoped under #stepcast-root so host styles don't leak in (or out). */
+
+#stepcast-root {
+  --sc-bg: #ffffff;
+  --sc-fg: #0f172a;
+  --sc-muted: #64748b;
+  --sc-border: #e2e8f0;
+  --sc-soft: #f1f5f9;
+  --sc-accent: #4f46e5;
+  --sc-accent-fg: #ffffff;
+  --sc-rec: #dc2626;
+  --sc-dim: rgba(15, 23, 42, 0.45);
+  --sc-shadow: 0 12px 32px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.08);
+  --sc-z: 2147483000;
+
+  color-scheme: light;
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--sc-fg);
+  text-align: left;
+  letter-spacing: normal;
+}
+
+/*
+ * Theme: data-theme="dark" forces dark, data-theme="light" forces light, and no data-theme follows the device.
+ * The dark values are repeated because a media query can't be OR-ed with an attribute selector.
+ * An accent chosen in Settings is set inline on #stepcast-root and overrides both.
+ */
+#stepcast-root[data-theme="dark"] {
+  color-scheme: dark;
+  --sc-bg: #111827;
+  --sc-fg: #e5e7eb;
+  --sc-muted: #9ca3af;
+  --sc-border: #1f2937;
+  --sc-soft: #1f2937;
+  --sc-accent: #818cf8;
+  --sc-accent-fg: #0b1020;
+  --sc-rec: #f87171;
+  --sc-dim: rgba(0, 0, 0, 0.55);
+  --sc-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  #stepcast-root:not([data-theme]) {
+    color-scheme: dark;
+    --sc-bg: #111827;
+    --sc-fg: #e5e7eb;
+    --sc-muted: #9ca3af;
+    --sc-border: #1f2937;
+    --sc-soft: #1f2937;
+    --sc-accent: #818cf8;
+    --sc-accent-fg: #0b1020;
+    --sc-rec: #f87171;
+    --sc-dim: rgba(0, 0, 0, 0.55);
+    --sc-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+}
+
+#stepcast-root,
+#stepcast-root * { box-sizing: border-box; }
+
+#stepcast-root [hidden] { display: none !important; }
+
+#stepcast-root :where(button, input, textarea, select) {
+  all: unset;
+  box-sizing: border-box;
+  font: inherit;
+  color: inherit;
+}
+
+#stepcast-root :where(p, ol, li, code) { margin: 0; padding: 0; }
+#stepcast-root svg { display: block; flex: none; }
+
+#stepcast-root :where(button) { cursor: pointer; }
+#stepcast-root :where(button):focus-visible,
+#stepcast-root :where(input, textarea, select):focus {
+  outline: 2px solid var(--sc-accent);
+  outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------------- buttons */
+
+#stepcast-root .sc-btn {
+  flex: 1 1 0;
+  padding: 7px 12px;
+  border: 1px solid var(--sc-border);
+  border-radius: 8px;
+  background: var(--sc-soft);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+#stepcast-root .sc-btn:hover { border-color: var(--sc-muted); }
+#stepcast-root .sc-btn[disabled] { opacity: 0.45; cursor: default; border-color: var(--sc-border); }
+#stepcast-root .sc-btn-grow-0 { flex: none; }
+
+#stepcast-root .sc-btn-primary {
+  background: var(--sc-accent);
+  border-color: var(--sc-accent);
+  color: var(--sc-accent-fg);
+}
+#stepcast-root .sc-btn-primary:hover { border-color: var(--sc-accent); filter: brightness(1.08); }
+
+/* Record / Re-record / Stop / "Yes, start over": the panel's main action. */
+#stepcast-root .sc-btn-rec {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--sc-rec);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#stepcast-root .sc-btn-rec:hover { filter: brightness(1.08); }
+
+/* Quiet outline buttons: Preview / "Keep steps", Export. */
+#stepcast-root .sc-btn-quiet {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--sc-border);
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#stepcast-root .sc-btn-quiet:hover { background: var(--sc-soft); }
+#stepcast-root .sc-btn-quiet[disabled] { opacity: 0.45; cursor: default; background: transparent; }
+#stepcast-root .sc-btn-quiet .sc-chevron { color: var(--sc-muted); margin-left: -2px; }
+
+#stepcast-root .sc-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: var(--sc-muted);
+  font-size: 15px;
+  line-height: 1;
+}
+#stepcast-root .sc-icon:hover { background: var(--sc-soft); color: var(--sc-fg); }
+
+/* ------------------------------------------------------------------ panel */
+
+#stepcast-root .sc-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--sc-z);
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  background: var(--sc-bg);
+  border-left: 1px solid var(--sc-border);
+  box-shadow: var(--sc-shadow);
+  transition: transform 0.2s ease;
+}
+#stepcast-root .sc-panel.sc-collapsed,
+#stepcast-root .sc-panel.sc-playing { transform: translateX(100%); box-shadow: none; }
+
+#stepcast-root .sc-handle {
+  position: absolute;
+  top: 96px;
+  left: -34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 34px;
+  padding: 12px 0;
+  writing-mode: vertical-rl;
+  background: var(--sc-bg);
+  border: 1px solid var(--sc-border);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  box-shadow: -4px 4px 12px rgba(15, 23, 42, 0.1);
+  font-weight: 600;
+  font-size: 12px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none; /* let touch drags move the handle instead of scrolling */
+}
+#stepcast-root .sc-playing .sc-handle { display: none; }
+
+/* Dragging is only available while collapsed; an open panel's handle is a plain button. */
+#stepcast-root .sc-collapsed .sc-handle { cursor: grab; }
+#stepcast-root .sc-dragging .sc-handle { cursor: grabbing; transition: none; }
+
+#stepcast-root .sc-grip { color: var(--sc-muted); transition: opacity 0.2s ease; }
+#stepcast-root .sc-grip svg { width: 14px; height: 14px; }
+#stepcast-root .sc-panel:not(.sc-collapsed) .sc-grip { opacity: 0.3; }
+
+#stepcast-root .sc-handle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sc-muted);
+}
+#stepcast-root .sc-is-recording .sc-handle-dot {
+  background: var(--sc-rec);
+  animation: sc-pulse 1.2s ease-in-out infinite;
+}
+
+#stepcast-root .sc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  padding: 16px 18px;
+}
+
+#stepcast-root .sc-head { display: flex; align-items: center; justify-content: space-between; }
+#stepcast-root .sc-brand { font-size: 14px; font-weight: 500; }
+#stepcast-root .sc-logo-group { gap: 8px; }
+#stepcast-root .sc-logo {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--sc-accent);
+  color: var(--sc-accent-fg); /* white by default; follows the button text color setting */
+}
+
+/* The tutorial title reads as a heading and only shows it's editable on hover or focus. */
+#stepcast-root .sc-titleblock { display: flex; flex-direction: column; gap: 2px; }
+#stepcast-root .sc-title-input {
+  display: block;
+  width: calc(100% + 16px);
+  margin: 0 -8px;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 20px;
+  line-height: 1.35;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: text;
+}
+#stepcast-root .sc-title-input::placeholder { color: var(--sc-muted); opacity: 1; }
+#stepcast-root .sc-title-input:hover { border-color: var(--sc-border); }
+#stepcast-root .sc-title-input:focus { outline: none; border-color: var(--sc-accent); }
+
+#stepcast-root .sc-panel .sc-btn,
+#stepcast-root .sc-panel .sc-input { border-radius: 10px; }
+
+#stepcast-root .sc-row { display: flex; gap: 8px; }
+
+#stepcast-root .sc-field { display: flex; flex-direction: column; gap: 4px; }
+#stepcast-root .sc-label { color: var(--sc-muted); font-size: 12px; font-weight: 500; }
+
+#stepcast-root .sc-input,
+#stepcast-root .sc-textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--sc-border);
+  border-radius: 8px;
+  background: var(--sc-bg);
+  cursor: text;
+}
+#stepcast-root .sc-textarea { white-space: pre-wrap; resize: vertical; min-height: 64px; }
+#stepcast-root .sc-input::placeholder,
+#stepcast-root .sc-textarea::placeholder { color: var(--sc-muted); opacity: 0.8; }
+
+#stepcast-root .sc-status { color: var(--sc-muted); font-size: 12px; }
+#stepcast-root .sc-is-recording .sc-status { color: var(--sc-rec); font-weight: 500; }
+#stepcast-root .sc-status.sc-error { color: var(--sc-rec); }
+
+#stepcast-root .sc-head-group { display: flex; align-items: center; gap: 4px; }
+
+#stepcast-root .sc-note { color: var(--sc-muted); font-size: 12px; }
+
+/* --------------------------------------------------------------- settings */
+
+#stepcast-root .sc-select {
+  appearance: none;
+  padding-right: 30px;
+  cursor: pointer;
+  /* Chevron drawn with two gradients so it follows the theme's muted color. */
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--sc-muted) 50%),
+    linear-gradient(135deg, var(--sc-muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+#stepcast-root .sc-select option { background: var(--sc-bg); color: var(--sc-fg); }
+
+#stepcast-root .sc-color {
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 34px;
+  padding: 3px;
+  border: 1px solid var(--sc-border);
+  border-radius: 8px;
+  background: var(--sc-bg);
+  cursor: pointer;
+}
+#stepcast-root .sc-color::-webkit-color-swatch-wrapper { padding: 0; }
+#stepcast-root .sc-color::-webkit-color-swatch { border: 0; border-radius: 5px; }
+#stepcast-root .sc-color::-moz-color-swatch { border: 0; border-radius: 5px; }
+
+#stepcast-root .sc-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+#stepcast-root .sc-input.sc-auto { color: var(--sc-muted); }
+
+#stepcast-root .sc-label-row { display: flex; align-items: center; gap: 6px; }
+#stepcast-root .sc-tag {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--sc-soft);
+  color: var(--sc-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+#stepcast-root .sc-warn::before { content: "⚠ "; }
+
+#stepcast-root .sc-settings .sc-foot { margin-top: auto; }
+#stepcast-root .sc-btn-small { flex: none; align-self: flex-start; padding: 5px 10px; font-size: 12px; }
+
+/* ------------------------------------------------------------------ steps */
+
+/*
+ * Timeline geometry: the head has 8px padding and a 22px dot, so the dot's center is 19px from the left.
+ * The connector runs from 4px under this dot to 4px above the next one (whose head starts at the li's end).
+ */
+#stepcast-root .sc-steps-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 0 -8px; /* the step heads' 8px padding lines their content up with the rest of the panel */
+}
+#stepcast-root .sc-steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; list-style: none; }
+#stepcast-root .sc-steps:empty { display: none; }
+
+#stepcast-root .sc-step { position: relative; }
+#stepcast-root .sc-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 18.25px;
+  top: 34px;
+  bottom: -4px;
+  width: 1.5px;
+  background: var(--sc-border);
+  pointer-events: none;
+}
+
+#stepcast-root .sc-step-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+}
+#stepcast-root .sc-step-head:hover { background: var(--sc-soft); }
+
+#stepcast-root .sc-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--sc-border);
+  border-radius: 50%;
+  background: var(--sc-bg);
+  color: var(--sc-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+#stepcast-root .sc-open .sc-num { background: var(--sc-accent); border-color: var(--sc-accent); color: var(--sc-accent-fg); }
+
+#stepcast-root .sc-step-main { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; padding-top: 1px; }
+#stepcast-root .sc-step-title,
+#stepcast-root .sc-step-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#stepcast-root .sc-step-title { font-weight: 500; }
+#stepcast-root .sc-step-sub { font-size: 12px; }
+#stepcast-root .sc-step-sub.sc-empty { color: var(--sc-muted); font-style: italic; }
+#stepcast-root .sc-step-head .sc-chevron { flex: none; margin-top: 3px; color: var(--sc-muted); }
+
+/* Open step: indented to line up with the step name, so the timeline runs past it. */
+#stepcast-root .sc-step-body { display: flex; flex-direction: column; gap: 8px; padding: 2px 8px 12px 40px; }
+#stepcast-root .sc-step .sc-textarea { border-color: var(--sc-accent); border-radius: 10px; }
+#stepcast-root .sc-step .sc-textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sc-accent) 22%, transparent);
+}
+
+#stepcast-root .sc-meta { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--sc-muted); font-size: 12px; }
+#stepcast-root .sc-selector {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--sc-soft);
+  font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+#stepcast-root .sc-link {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 4px;
+  border-radius: 6px;
+  color: var(--sc-accent);
+  font-weight: 600;
+}
+#stepcast-root .sc-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+#stepcast-root .sc-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 220px;
+  margin: auto;
+  padding: 24px 8px;
+  color: var(--sc-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+#stepcast-root .sc-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--sc-soft);
+  color: var(--sc-rec);
+}
+
+/* ----------------------------------------------------------------- footer */
+
+#stepcast-root .sc-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sc-border);
+}
+#stepcast-root .sc-foot-row { display: flex; align-items: center; justify-content: space-between; }
+#stepcast-root .sc-foot .sc-btn-quiet { height: 34px; padding: 0 12px; }
+#stepcast-root .sc-foot .sc-icon { width: 34px; height: 34px; border-radius: 10px; }
+#stepcast-root .sc-foot .sc-icon[aria-expanded="true"] { background: var(--sc-soft); color: var(--sc-fg); }
+
+#stepcast-root .sc-menu-wrap { position: relative; }
+#stepcast-root .sc-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--sc-border);
+  border-radius: 10px;
+  background: var(--sc-bg);
+  box-shadow: var(--sc-shadow);
+}
+#stepcast-root .sc-menu-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 7px; }
+#stepcast-root .sc-menu-item:hover,
+#stepcast-root .sc-menu-item:focus-visible { background: var(--sc-soft); }
+
+#stepcast-root .sc-load { display: flex; gap: 8px; }
+
+/* ----------------------------------------------------- highlight + player */
+
+#stepcast-root .sc-peek {
+  position: fixed;
+  z-index: calc(var(--sc-z) - 1);
+  border: 2px dashed var(--sc-accent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+#stepcast-root .sc-peek.sc-flash {
+  border-style: solid;
+  background: color-mix(in srgb, var(--sc-accent) 18%, transparent);
+  animation: sc-fade 0.6s ease-out forwards;
+}
+
+#stepcast-root .sc-layer {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--sc-z) + 1);
+  pointer-events: none;
+}
+
+#stepcast-root .sc-ring {
+  position: fixed;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px var(--sc-accent), 0 0 0 100vmax var(--sc-dim);
+  transition: left 0.2s ease, top 0.2s ease, width 0.2s ease, height 0.2s ease;
+  pointer-events: none;
+}
+
+#stepcast-root .sc-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  padding: 12px 14px 14px;
+  border: 1px solid var(--sc-border);
+  border-radius: 12px;
+  background: var(--sc-bg);
+  box-shadow: var(--sc-shadow);
+  pointer-events: auto;
+  transition: transform 0.2s ease;
+}
+
+#stepcast-root .sc-tip-head { display: flex; align-items: center; justify-content: space-between; margin: -4px -6px 4px 0; }
+#stepcast-root .sc-tip-count {
+  color: var(--sc-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+#stepcast-root .sc-tip-text { font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+#stepcast-root .sc-tip-status { margin-top: 6px; color: var(--sc-muted); font-size: 12px; }
+
+#stepcast-root .sc-tip-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+#stepcast-root .sc-tip-actions .sc-btn { flex: none; padding: 6px 16px; }
+
+#stepcast-root .sc-progress {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sc-soft);
+  overflow: hidden;
+}
+#stepcast-root .sc-progress span {
+  display: block;
+  height: 100%;
+  background: var(--sc-accent);
+  transition: width 0.2s ease;
+}
+
+@keyframes sc-pulse { 50% { opacity: 0.3; } }
+@keyframes sc-fade { to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  #stepcast-root .sc-panel,
+  #stepcast-root .sc-ring,
+  #stepcast-root .sc-tip { transition: none; }
+}

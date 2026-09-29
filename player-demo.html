@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leafy · your plant care buddy</title>
+  <link rel="stylesheet" href="leafy.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo"><span class="logo-mark" aria-hidden="true">🌿</span> Leafy</div>
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" type="button" role="tab" id="tab-plants" aria-controls="view-garden" aria-selected="true" data-action="tab-plants">My plants</button>
+      <button class="tab" type="button" role="tab" id="tab-today" aria-controls="view-garden" aria-selected="false" data-action="tab-today">Today</button>
+      <button class="tab" type="button" role="tab" id="tab-reminders" aria-controls="view-reminders" aria-selected="false" data-action="tab-reminders">Reminders</button>
+    </div>
+    <button class="profile" type="button" data-action="profile" aria-label="Your profile"><span aria-hidden="true">🧑‍🌾</span></button>
+  </header>
+
+  <main class="page">
+    <!-- intro:start -->
+    <section class="intro" aria-labelledby="intro-title">
+      <p class="intro-title" id="intro-title">👀 See what visitors see</p>
+      <p>Leafy is a pretend app, and this page loads only the StepCast player, just like a live site would. Pick a tutorial below to see how StepCast guides visitors through it.</p>
+      <p class="intro-note">Nothing here is saved. Reload to start over.</p>
+      <div class="intro-actions">
+        <a class="intro-link" href="#" data-action="play-tutorial-add-a-plant" data-tutorial="add-a-plant">Add a plant</a>
+        <a class="intro-link" href="#" data-action="play-tutorial-water-a-plant" data-tutorial="water-a-plant">Water the Monstera</a>
+        <button class="btn btn-primary" type="button" data-action="play-sample" data-stepcast-ignore>▶ Play sample tutorial</button>
+      </div>
+      <details class="install">
+        <summary class="install-summary">How to add tutorials to your site</summary>
+        <ol class="install-steps">
+          <li><strong>Copy the stepcast/ folder</strong> into your project, with your tutorials in stepcast/tutorials/.</li>
+          <li><strong>Add the player</strong> to your page:
+            <pre class="code-block"><code>&lt;script src="stepcast/stepcast-player.js"&gt;&lt;/script&gt;</code></pre>
+          </li>
+          <li><strong>Start a tutorial</strong> with a link:
+            <pre class="code-block"><code>&lt;a href="#" data-tutorial="add-a-plant"&gt;Show me how&lt;/a&gt;</code></pre>
+          </li>
+        </ol>
+        <p class="intro-note">Serve your pages over http, not by opening the file directly. More in stepcast/README.md.</p>
+      </details>
+    </section>
+    <!-- intro:end -->
+
+    <div class="hero">
+      <h1 class="greeting" id="greeting">Good morning!</h1>
+      <button class="btn btn-primary btn-big" type="button" data-action="add-plant">+ Add a plant</button>
+    </div>
+
+    <section id="view-garden" role="tabpanel" aria-labelledby="tab-plants">
+      <div class="garden" id="garden"></div>
+      <div class="empty" id="garden-empty" hidden></div>
+    </section>
+
+    <section id="view-reminders" role="tabpanel" aria-labelledby="tab-reminders" hidden>
+      <h2 class="reminders-title">Upcoming waterings</h2>
+      <ol class="reminders" id="reminder-list"></ol>
+    </section>
+  </main>
+
+  <!-- A plain div overlay, not <dialog>.showModal(): StepCast's overlay can't sit above a native modal. -->
+  <div class="popup-backdrop" id="add-popup" hidden>
+    <div class="popup" role="dialog" aria-modal="true" aria-labelledby="add-popup-title">
+      <h2 class="popup-title" id="add-popup-title">Let's add a plant 🌱</h2>
+      <fieldset class="field">
+        <legend class="field-label">Pick an emoji</legend>
+        <div class="chips" id="emoji-chips"></div>
+      </fieldset>
+      <label class="field">
+        <span class="field-label">Name</span>
+        <input id="new-plant-name" type="text" data-action="new-plant-name" autocomplete="off" maxlength="40">
+      </label>
+      <fieldset class="field">
+        <legend class="field-label">Which room?</legend>
+        <div class="chips" id="room-chips"></div>
+      </fieldset>
+      <fieldset class="field">
+        <legend class="field-label">How often does it like a drink?</legend>
+        <div class="chips" id="water-chips"></div>
+      </fieldset>
+      <div class="popup-actions">
+        <button class="btn" type="button" data-action="cancel-add">Cancel</button>
+        <button class="btn btn-primary" type="button" data-action="save-plant">Save plant</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="stepcast/stepcast-player.js"></script>
+  <script src="leafy.js"></script>
+</body>
+</html>
