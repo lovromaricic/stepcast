@@ -170,6 +170,147 @@
     return { mode: MODES.includes(t.mode) ? t.mode : 'auto', brand: hex(t.brandColor), text: hex(t.buttonTextColor) };
   }
 
+  // -------------------------------------------------------------- narration
+  // Reads each step aloud with the browser's own speech (Web Speech API): no files, no service. The author decides
+  // per tutorial (`narration.enabled`): off means no narration and no speaker button; on means steps are read
+  // aloud and visitors get a speaker button to mute them. A visitor who mutes stays muted (remembered per site).
+
+  const synth = window.speechSynthesis || null;
+  const NARRATION_KEY = 'stepcast:narration';
+  let narrationAvailable = false; // this tutorial is narrated (and the browser can speak)
+  let narrationOn = false;
+  let spokenText = ''; // what the tutorial box says now, so switching narration on can read it straight away
+  let voice = null;
+
+  const narrationFrom = (tutorial) =>
+    !!(tutorial.narration && typeof tutorial.narration === 'object' && tutorial.narration.enabled === true);
+
+  function visitorChoice() {
+    try { return localStorage.getItem(NARRATION_KEY); } catch { return null; }
+  }
+  function saveVisitorChoice(on) {
+    try { localStorage.setItem(NARRATION_KEY, on ? 'on' : 'off'); } catch { /* private mode */ }
+  }
+
+  // The most natural-sounding voice the device offers for the page's language (<html lang>). Quality varies a
+  // lot: Edge's "… Online (Natural)" and Chrome's "Google …" voices are cloud neural voices, Apple devices offer
+  // downloadable "Premium"/"Enhanced" voices, and macOS also ships novelty voices (Zarvox, Bubbles…) to avoid.
+  const NOVELTY_VOICES = /^(albert|bad news|bahh|bells|boing|bubbles|cellos|fred|good news|jester|junior|kathy|organ|ralph|superstar|trinoids|whisper|wobble|zarvox|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley)\b/i;
+  const failedVoices = new Set(); // voices that errored (e.g. a cloud voice while offline)
+
+  function voiceScore(v, lang) {
+    const vLang = v.lang.toLowerCase().replace('_', '-');
+    let score = vLang === lang ? 100 : vLang.split('-')[0] === lang.split('-')[0] ? 60 : -1000;
+    if (/natural|neural/i.test(v.name)) score += 40;
+    if (/premium/i.test(v.name)) score += 35;
+    if (/enhanced/i.test(v.name)) score += 30;
+    if (/^google\b/i.test(v.name) || /\bonline\b/i.test(v.name)) score += 25;
+    if (NOVELTY_VOICES.test(v.name)) score -= 200;
+    if (v.default) score += 3; // tie-break: the device's own choice
+    return score;
+  }
+
+  // The author's chosen voice (`narration.voice`, a voice name). Voices differ per device, so it's a preference:
+  // used when this device has it, otherwise the best available voice is picked as usual.
+  let preferredVoice = '';
+
+  const pageLang = () => (document.documentElement.lang || navigator.language || 'en').toLowerCase();
+
+  // This device's usable voices for the page's language, best first (novelty voices left out). For the
+  // recorder's voice dropdown.
+  function rankedVoices() {
+    if (!synth) return [];
+    const lang = pageLang();
+    return synth.getVoices()
+      .map((v) => ({ v, s: voiceScore(v, lang) }))
+      .filter(({ v, s }) => s > 0 && !NOVELTY_VOICES.test(v.name))
+      .sort((a, b) => b.s - a.s || a.v.name.localeCompare(b.v.name))
+      .map(({ v }) => ({ name: v.name, lang: v.lang }));
+  }
+
+  function pickVoice() {
+    const lang = pageLang();
+    const candidates = synth.getVoices().filter((v) => !failedVoices.has(v.name));
+    const preferred = preferredVoice && candidates.find((v) => v.name === preferredVoice);
+    if (preferred) { voice = preferred; return; }
+    let best = null;
+    let bestScore = -Infinity;
+    for (const v of candidates) {
+      const s = voiceScore(v, lang);
+      if (s > bestScore) { best = v; bestScore = s; }
+    }
+    voice = bestScore > 0 ? best : null; // nothing for this language: let the browser choose
+  }
+  if (synth) {
+    pickVoice();
+    if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice);
+  }
+
+  const hush = () => { if (synth) synth.cancel(); };
+
+  function speak(text) {
+    spokenText = text;
+    if (!synth || !narrationOn) return;
+    synth.cancel();
+    // Emoji would be read out by name ("seedling"); the subtitle on screen keeps them.
+    const clean = text.replace(/[\p{Extended_Pictographic}‍️]/gu, '').replace(/\s+/g, ' ').trim();
+    // One utterance per sentence: Chrome stops long utterances partway.
+    for (const sentence of clean.split(/(?<=[.!?])\s+/)) {
+      if (!sentence) continue;
+      const u = new SpeechSynthesisUtterance(sentence);
+      if (document.documentElement.lang) u.lang = document.documentElement.lang;
+      if (voice) u.voice = voice;
+      // Stay quiet on errors. "not-allowed" (no click yet) and "interrupted"/"canceled" (we moved on) are normal;
+      // anything else means this voice failed (e.g. a cloud voice offline), so use the next best one from now on.
+      u.onerror = (e) => {
+        if (['not-allowed', 'interrupted', 'canceled'].includes(e.error) || !u.voice) return;
+        failedVoices.add(u.voice.name);
+        pickVoice();
+      };
+      synth.speak(u);
+    }
+  }
+
+  // The recorder's ▶ button: say `text` in voice `name` ('' = automatic), whatever the narration setting.
+  function previewVoice(name, text) {
+    if (!synth) return;
+    const [savedPreferred, savedOn, savedText] = [preferredVoice, narrationOn, spokenText];
+    preferredVoice = name;
+    pickVoice();
+    narrationOn = true;
+    speak(text); // each utterance keeps the voice it was created with
+    [preferredVoice, narrationOn, spokenText] = [savedPreferred, savedOn, savedText];
+    pickVoice();
+  }
+
+  // Static, trusted markup: parsed via <template> so the SVG gets the right namespace.
+  function svgIcon(markup) {
+    const t = document.createElement('template');
+    t.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${markup}</svg>`;
+    return t.content.firstChild;
+  }
+  const SPEAKER_ON = '<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>';
+  const SPEAKER_OFF = '<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m23 9-6 6"/><path d="m17 9 6 6"/>';
+
+  // The speaker button in the tutorial box: an on/off toggle (aria-pressed). Updated in place so focus stays put.
+  function voiceButton() {
+    const button = h('button', { class: 'sc-icon sc-voice', type: 'button', 'aria-label': 'Read steps aloud' });
+    const sync = () => {
+      button.setAttribute('aria-pressed', String(narrationOn));
+      button.title = narrationOn ? 'Stop reading aloud' : 'Read steps aloud';
+      button.replaceChildren(svgIcon(narrationOn ? SPEAKER_ON : SPEAKER_OFF));
+    };
+    button.addEventListener('click', () => {
+      narrationOn = !narrationOn;
+      saveVisitorChoice(narrationOn);
+      sync();
+      if (narrationOn) speak(spokenText); else hush();
+    });
+    sync();
+    return button;
+  }
+
   // ----------------------------------------------------------------- player
 
   // fieldStart: the highlighted field's value when its type/select step began, to tell whether the viewer
@@ -202,6 +343,12 @@
     unpeek();
     player.tutorial = tutorial;
     applyLook(lookFromTheme(tutorial.theme)); // no theme → default look
+    narrationAvailable = !!synth && narrationFrom(tutorial);
+    const chosen = tutorial.narration && tutorial.narration.voice;
+    preferredVoice = typeof chosen === 'string' ? chosen.slice(0, 200) : '';
+    if (synth) pickVoice();
+    narrationOn = narrationAvailable && visitorChoice() !== 'off';
+    spokenText = '';
     layer.hidden = false;
     window.dispatchEvent(new CustomEvent('stepcast:playstart', { detail: { tutorial } }));
     document.addEventListener('click', onPlayClick, true);
@@ -214,6 +361,7 @@
 
   function stopPlayback() {
     const wasPlaying = !!player.tutorial;
+    if (wasPlaying) hush();
     player.token++;
     player.tutorial = null;
     player.el = null;
@@ -328,11 +476,15 @@
   function renderTip(state) {
     const t = player.tutorial;
     const close = h('button', { class: 'sc-icon', 'aria-label': 'Close tutorial', text: '✕', onclick: stopPlayback });
+    // Speaker toggle (only where the browser can speak) and the close button.
+    const tools = h('span', { class: 'sc-tip-tools' }, narrationAvailable ? voiceButton() : null, close);
     if (state === 'done') {
+      const doneText = 'That’s it — tutorial complete.';
       tip.replaceChildren(
-        h('div', { class: 'sc-tip-head' }, h('span', { class: 'sc-tip-count', text: t.title || 'Tutorial' }), close),
-        h('p', { class: 'sc-tip-text', text: 'That’s it — tutorial complete.' }),
+        h('div', { class: 'sc-tip-head' }, h('span', { class: 'sc-tip-count', text: t.title || 'Tutorial' }), tools),
+        h('p', { class: 'sc-tip-text', text: doneText }),
         h('div', { class: 'sc-tip-actions' }, h('button', { class: 'sc-btn sc-btn-primary', text: 'Done', onclick: stopPlayback })));
+      speak(doneText);
       return;
     }
     const i = player.index;
@@ -342,9 +494,10 @@
       searching: 'Waiting for this element to appear…',
       missing: 'Couldn’t find this element on the page.',
     }[state];
+    const text = step.subtitle || defaultTip(step);
     tip.replaceChildren(
-      h('div', { class: 'sc-tip-head' }, h('span', { class: 'sc-tip-count', text: `Step ${i + 1} of ${total}` }), close),
-      h('p', { class: 'sc-tip-text', text: step.subtitle || defaultTip(step) }),
+      h('div', { class: 'sc-tip-head' }, h('span', { class: 'sc-tip-count', text: `Step ${i + 1} of ${total}` }), tools),
+      h('p', { class: 'sc-tip-text', text }),
       status ? h('p', { class: 'sc-tip-status', text: status }) : '',
       h('div', { class: 'sc-tip-actions' },
         h('div', { class: 'sc-progress' }, h('span', { style: `width:${((i + 1) / total) * 100}%` })),
@@ -354,6 +507,9 @@
           disabled: state === 'searching',
           onclick: state === 'missing' ? () => goTo(i + 1) : next,
         })));
+    // Read the step once its element is found (or known missing); stay quiet while still looking for it.
+    if (state === 'searching') { hush(); spokenText = text; }
+    else speak(state === 'missing' ? `${text} ${status}` : text);
   }
 
   // Follow the element every frame so the ring tracks scrolling, resizing and animations.
@@ -414,6 +570,7 @@
     // Shared with stepcast-recorder.js. Not a public API: may change between versions.
     _internal: {
       h, root, findElement, textOf, describe, fieldAction, outline, unpeek, contrast, setBaseLook,
+      rankedVoices, previewVoice,
       isPlaying: () => !!player.tutorial,
     },
   };

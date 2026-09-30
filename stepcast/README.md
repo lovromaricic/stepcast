@@ -96,16 +96,19 @@ including to a running Preview:
 
 - **Mode**: Auto (follows the device's light/dark setting), Light, or Dark. Applies to the panel and the
   tutorial box.
+- **Read steps aloud**: Off or On. When On, visitors hear each step and get a speaker button to mute it, and a
+  **Voice** dropdown appears with a **Play** button to hear a voice. See [Narration](#narration-reading-steps-aloud).
 - **Brand color**: used for primary buttons (Next, Done), the highlight ring and the progress bar. Pick a
   color, or type a hex value (`#4f46e5`, `4f46e5` and `#abc` all work). Leave it empty for the default.
 - **Button text color**: the text on brand-colored buttons. By default it's **automatic**: white or near-black,
   whichever is more readable on the brand color. The field then shows the chosen color with an "Auto" tag. Pick
   or type a color to override it. Press **Auto** (or empty the hex field) to go back to automatic. If the two colors
   have less than 3:1 contrast, a warning appears under the field, but the colors are still applied.
-- **Reset to defaults** sets Mode back to Auto, clears the brand color and makes button text automatic again.
+- **Reset to defaults** sets Mode back to Auto, clears the brand color, makes button text automatic again, turns
+  Read steps aloud off and sets the voice back to Automatic.
 
 Settings are saved in your browser (`localStorage` key `stepcast:settings`), and **copied into each tutorial you
-download or copy** as its `theme`. Visitors see a tutorial with the look it was exported with. Changing your settings
+download or copy**: the look as its `theme`, and the narration as its `narration`. Visitors see a tutorial with the look it was exported with. Changing your settings
 later doesn't change tutorials you've already exported; re-download them to update. **▶ Preview** plays with the
 current settings, exactly as the downloaded file would.
 
@@ -184,6 +187,43 @@ Exported tutorials include an optional `theme`:
 The player applies it only while that tutorial plays, then restores the previous look. That's the default on a
 live site, or your own settings on a page with the recorder. Invalid values are ignored and fall back to the
 default, and tutorials without a `theme` (older files) play with the default look.
+
+### Narration (reading steps aloud)
+
+The player can read each step aloud with the visitor's own browser voice (the Web Speech API). There are no audio
+files, no service and no API key. It reads the step's subtitle, or the default text such as 'Click “Save”' when
+there isn't one, and emoji are skipped.
+
+- **The author decides per tutorial** in the recorder's **Settings → Read steps aloud**:
+  - **Off:** no narration, and visitors see no speaker button.
+  - **On:** steps are read aloud, and visitors get a speaker button in the tutorial box to mute or unmute it.
+
+  It's saved into exported tutorials as:
+
+  ```json
+  "narration": { "enabled": true }
+  ```
+
+  A missing or invalid value means off, so older tutorials have no narration.
+- **Choosing a voice:** when narration is On, a **Voice** dropdown appears under it. It lists **Automatic (best
+  available)** and this device's voices for the page's language (novelty voices hidden), with a **Play** button to
+  hear one. The choice is saved as `"narration": { "enabled": true, "voice": "Daniel" }`. Voices differ per device,
+  so it's a preference: visitors who have that voice hear it, and everyone else hears the best voice their device
+  offers.
+- **Visitors can mute narrated tutorials:** if they mute, that's remembered in their browser (`localStorage`,
+  `stepcast:narration`) and applies to every narrated tutorial on your site. Visitors can't turn narration on for
+  a tutorial that has it off.
+- **The voice depends on the visitor's device and browser.** StepCast picks the most natural-sounding voice
+  offered for the page's language (`<html lang>`). In order, it prefers "Natural" and neural voices (Microsoft
+  Edge's online voices), "Premium" and "Enhanced" voices (Apple devices, once downloaded), then Google's cloud voices
+  (Chrome). It avoids novelty voices like Zarvox. If a cloud voice fails, for example offline, it moves to the next
+  best one. With no voice for the page's language, the browser's default is used. In browsers without speech
+  support, tutorials simply play without narration and without the button.
+- **To hear a better voice on a Mac,** download a Premium or Enhanced voice: System Settings → Accessibility →
+  Spoken Content → System voice → Manage Voices. Then reload the page. Edge's "Natural" voices sound the most
+  human and need no download.
+- **Browsers only allow sound after a click.** A tutorial started by a button speaks right away; one started from a
+  `?stepcast-play` link starts speaking after the visitor's first click.
 
 ## v1 limits
 

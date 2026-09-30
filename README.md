@@ -57,6 +57,8 @@ The full guide, covering stable selectors, typing steps, settings, themes and th
 - **Guided playback:** the page dims around the current element, and a box shows its subtitle. Visitors click the
   element or type into it themselves, or press Next to have StepCast do it. Esc exits.
 - **Your look:** light, dark or auto mode, a brand color and a button text color, saved into each tutorial.
+- **Narration:** turn it on per tutorial and steps are read aloud with the visitor's browser voice. You can pick
+  a preferred voice, and visitors can mute it with a speaker button.
 - **Small:** the player is about 6.5 KB gzipped (plus 4 KB of CSS) and keeps its styles and events to itself.
 
 ## Safety

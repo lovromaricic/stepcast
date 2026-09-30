@@ -92,6 +92,7 @@
 #stepcast-root .sc-btn:hover { border-color: var(--sc-muted); }
 #stepcast-root .sc-btn[disabled] { opacity: 0.45; cursor: default; border-color: var(--sc-border); }
 #stepcast-root .sc-btn-grow-0 { flex: none; }
+#stepcast-root .sc-btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 
 #stepcast-root .sc-btn-primary {
   background: var(--sc-accent);
@@ -282,6 +283,9 @@
 
 #stepcast-root .sc-select {
   appearance: none;
+  white-space: nowrap; /* long voice names stay on one line, trimmed with "…" */
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding-right: 30px;
   cursor: pointer;
   /* Chevron drawn with two gradients so it follows the theme's muted color. */
@@ -524,6 +528,8 @@
 }
 
 #stepcast-root .sc-tip-head { display: flex; align-items: center; justify-content: space-between; margin: -4px -6px 4px 0; }
+#stepcast-root .sc-tip-tools { display: flex; align-items: center; gap: 2px; }
+#stepcast-root .sc-voice[aria-pressed="true"] { color: var(--sc-accent); }
 #stepcast-root .sc-tip-count {
   color: var(--sc-muted);
   font-size: 11px;

@@ -4,6 +4,7 @@
   "title": "Add a plant",
   "startUrl": "/",
   "createdAt": "2026-09-29T19:00:00.000Z",
+  "narration": { "enabled": true },
   "steps": [
     {
       "selector": "[data-action=\"add-plant\"]",

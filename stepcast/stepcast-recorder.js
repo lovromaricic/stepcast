@@ -205,6 +205,7 @@
     const StepCast = window.StepCast;
     const {
       h, root, findElement, textOf, describe, fieldAction, outline, unpeek, contrast, setBaseLook, isPlaying,
+      rankedVoices, previewVoice,
     } = StepCast._internal;
 
     const ui = Object.assign({ collapsed: false }, store.get(UI_KEY));
@@ -219,12 +220,16 @@
     // ------------------------------------------------------------- settings
 
     // brand → --sc-accent, buttonText → --sc-accent-fg. Empty means "default" / "automatic".
-    const DEFAULT_SETTINGS = { mode: 'auto', brand: '', buttonText: '' };
+    // narration: whether exported tutorials read steps aloud (visitors can then mute it; off means no narration at all).
+    // voice: the preferred narration voice's name, '' = automatic (best available on each visitor's device).
+    const DEFAULT_SETTINGS = { mode: 'auto', brand: '', buttonText: '', narration: false, voice: '' };
     const saved = store.get(SETTINGS_KEY) || {};
     let settings = {
       mode: MODES.includes(saved.mode) ? saved.mode : 'auto',
       brand: normalizeHex(saved.brand || saved.accent || '') || '', // `accent` was the pre-rename key
       buttonText: normalizeHex(saved.buttonText || '') || '',
+      narration: saved.narration === true,
+      voice: typeof saved.voice === 'string' ? saved.voice : '',
     };
 
     const cssColor = (name) => normalizeHex(getComputedStyle(root).getPropertyValue(name));
@@ -261,6 +266,9 @@
 
     function syncSettingsFields() {
       els.mode.value = settings.mode;
+      els.narration.value = settings.narration ? 'on' : 'off';
+      els.voiceField.hidden = !settings.narration; // choosing a voice only matters when narration is on
+      fillVoiceOptions();
       // Pickers always show the colors in effect, including theme defaults and the automatic text color.
       const brand = cssColor('--sc-accent') || '#4f46e5';
       const text = cssColor('--sc-accent-fg') || '#ffffff';
@@ -467,6 +475,9 @@
         startUrl: draft.startUrl,
         createdAt: draft.createdAt || new Date().toISOString(),
         theme: currentTheme(), // Download, Copy and Preview all go through here
+        narration: settings.narration && settings.voice
+          ? { enabled: true, voice: settings.voice }
+          : { enabled: settings.narration },
         steps: draft.steps.map((s) => ({ ...s, hint: { ...s.hint } })),
       };
     }
@@ -673,6 +684,25 @@
         h('option', { value: 'auto', text: 'Auto' }),
         h('option', { value: 'light', text: 'Light' }),
         h('option', { value: 'dark', text: 'Dark' }));
+      els.narration = h('select', {
+        class: 'sc-input sc-select', id: 'stepcast-narration',
+        onchange: (e) => { settings.narration = e.target.value === 'on'; saveSettings(); },
+      },
+        h('option', { value: 'off', text: 'Off' }),
+        h('option', { value: 'on', text: 'On' }));
+      els.voice = h('select', {
+        class: 'sc-input sc-select', id: 'stepcast-voice',
+        onchange: (e) => { settings.voice = e.target.value; saveSettings(); },
+      });
+      els.voiceField = h('div', { class: 'sc-field', hidden: true },
+        h('label', { class: 'sc-label', for: 'stepcast-voice', text: 'Voice' }),
+        h('div', { class: 'sc-row' },
+          els.voice,
+          h('button', {
+            class: 'sc-btn sc-btn-grow-0 sc-btn-icon', type: 'button', title: 'Hear this voice',
+            onclick: () => previewVoice(settings.voice, 'Hi! This is how your tutorial will sound.'),
+          }, icon(PLAY, 12), 'Play')),
+        h('p', { class: 'sc-note', text: 'Voices differ per device. Visitors who don’t have this voice hear the best one their device offers.' }));
       els.brand = colorField('brand', 'Brand color', 'stepcast-brand-hex');
       els.buttonText = Object.assign(colorField('buttonText', 'Button text color', 'stepcast-button-text-hex'), {
         autoTag: h('span', { class: 'sc-tag', text: 'Auto' }),
@@ -689,6 +719,11 @@
             h('button', { class: 'sc-icon', title: 'Back', 'aria-label': 'Back', onclick: () => showSettings(false) }, icon(ARROW_LEFT)),
             h('strong', { class: 'sc-brand', text: 'Settings' }))),
         h('label', { class: 'sc-field' }, h('span', { class: 'sc-label', text: 'Mode' }), els.mode),
+        h('div', { class: 'sc-field' },
+          h('label', { class: 'sc-label', for: 'stepcast-narration', text: 'Read steps aloud' }),
+          els.narration,
+          h('p', { class: 'sc-note', text: 'When on, steps are read aloud with the visitor’s browser voice, and visitors can mute it with a speaker button. When off, there’s no narration and no speaker button.' })),
+        els.voiceField,
         h('div', { class: 'sc-field' },
           h('label', { class: 'sc-label', for: 'stepcast-brand-hex', text: 'Brand color' }),
           h('div', { class: 'sc-row' }, els.brand.picker, els.brand.hex),
@@ -825,6 +860,23 @@
       const opened = els.steps.querySelector('.sc-open textarea');
       if (opened) opened.focus();
       else if (recording && els.steps.lastElementChild) els.steps.lastElementChild.scrollIntoView({ block: 'nearest' });
+    }
+
+    // The Voice dropdown: "Automatic" first, then this device's voices for the page's language, best first. A saved
+    // voice this device doesn't have (e.g. chosen on another computer) stays selectable, marked as such.
+    function fillVoiceOptions() {
+      const voices = rankedVoices();
+      const options = [h('option', { value: '', text: 'Automatic (best available)' })];
+      for (const v of voices) options.push(h('option', { value: v.name, text: `${v.name} · ${v.lang}` }));
+      if (settings.voice && !voices.some((v) => v.name === settings.voice)) {
+        options.push(h('option', { value: settings.voice, text: `${settings.voice} (not on this device)` }));
+      }
+      els.voice.replaceChildren(...options);
+      els.voice.value = settings.voice;
+    }
+    // Browsers load their voice list asynchronously.
+    if (window.speechSynthesis && speechSynthesis.addEventListener) {
+      speechSynthesis.addEventListener('voiceschanged', () => { if (els.voice) fillVoiceOptions(); });
     }
 
     // After editing a select step's value: the matching option's visible text if the dropdown is on the page.
