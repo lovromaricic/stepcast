@@ -6,6 +6,12 @@ StepCast is a drop-in folder with no build step, no dependencies and no account.
 dropdown choices; each becomes a step you can give a friendly subtitle. Visitors then see a guided walkthrough that
 highlights one element at a time. Tutorials are plain JSON files that live in your repo, next to your code.
 
+
+
+https://github.com/user-attachments/assets/5dd0094c-e3f2-40c7-9116-780e3eae9885
+
+
+
 ## Try the demo
 
 The repo includes **Leafy**, a small pretend plant-care app to try StepCast on. Serve the folder over http (opening
